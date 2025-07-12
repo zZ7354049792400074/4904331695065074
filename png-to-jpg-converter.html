@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PNG to JPG Converter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px auto;
+            max-width: 480px;
+            background: #f9f9f9;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            padding: 24px;
+            border-radius: 16px;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        .converter {
+            background: #fff;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 1px 8px rgba(0,0,0,0.03);
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        input[type="file"] {
+            width: 100%;
+        }
+        #output-link {
+            display: none;
+            margin-top: 24px;
+            text-align: center;
+        }
+        #output-link a {
+            background: #3498db;
+            color: #fff;
+            padding: 12px 32px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 16px;
+        }
+        .error {
+            color: #e74c3c;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>PNG to JPG Converter</h1>
+    <div class="converter">
+        <form id="convert-form">
+            <div class="input-group">
+                <label for="png-file">Upload PNG file (max 9999PB):</label>
+                <input type="file" id="png-file" accept="image/png" required>
+                <div class="error" id="file-error"></div>
+            </div>
+            <button type="submit">Convert to JPG</button>
+        </form>
+        <div id="output-link">
+            <p>Your JPG file is ready:</p>
+            <a id="download-link" href="#" download="converted.jpg">Download JPG</a>
+        </div>
+    </div>
+    <script>
+        // 9999 PB in bytes
+        const MAX_SIZE = 9999 * 1024 * 1024 * 1024 * 1024 * 1024;
+
+        const form = document.getElementById('convert-form');
+        const fileInput = document.getElementById('png-file');
+        const fileError = document.getElementById('file-error');
+        const outputLink = document.getElementById('output-link');
+        const downloadLink = document.getElementById('download-link');
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            fileError.textContent = '';
+            outputLink.style.display = 'none';
+
+            const file = fileInput.files[0];
+            if (!file) {
+                fileError.textContent = 'Please select a PNG file.';
+                return;
+            }
+
+            if (file.size > MAX_SIZE) {
+                fileError.textContent = 'File is too large (max 9999PB).';
+                return;
+            }
+
+            if (file.type !== 'image/png') {
+                fileError.textContent = 'Only PNG files are allowed.';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    canvas.toBlob(function(blob) {
+                        const url = URL.createObjectURL(blob);
+                        downloadLink.href = url;
+                        downloadLink.download = file.name.replace(/\.png$/i, '.jpg');
+                        outputLink.style.display = 'block';
+                    }, 'image/jpeg', 0.92);
+                };
+                img.onerror = function() {
+                    fileError.textContent = 'Could not load PNG image. Please try another file.';
+                };
+                img.src = event.target.result;
+            };
+            reader.onerror = function() {
+                fileError.textContent = 'Error reading file.';
+            };
+            reader.readAsDataURL(file);
+        });
+    </script>
+</body>
+</html>
